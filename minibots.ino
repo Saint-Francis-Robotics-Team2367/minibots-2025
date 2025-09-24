@@ -99,6 +99,13 @@ void loop() {
     memcpy(axes, incomingPacket + 16, 6);
     memcpy(buttons, incomingPacket + 22, 2);
 
+    
+    // Axis 0: Left Joystick Horizontal (253 Right)
+    // Axis 1: Left Joystick Vertical (253 Down)
+    // Axis 2: Right Joystick Horizontal (253 Right)
+    // Axis 3: Right Joystick Vertical (253 Down)
+    // Axis 4: Left Trigger (253 Pressed)
+    // Axis 5: Right Trigger (253 Pressed)
 
     if (String(robotName) == robot_id) {
       Serial.println("Controller data received for this robot:");

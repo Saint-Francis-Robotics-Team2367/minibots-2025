@@ -76,11 +76,31 @@ def connect_robot(robot_name, controller_name):
     else:
         print("Connection failed")
 
+def refresh_controllers():
+    global active_controllers
+    pygame.joystick.quit()
+    pygame.joystick.init()
+    active_controllers = []
+    for i in range(pygame.joystick.get_count()):
+        joystick = pygame.joystick.Joystick(i)
+        joystick.init()
+        active_controllers.append({
+            "id": i,
+            "name": f"{i}: {joystick.get_name()}",
+            "obj": joystick
+        })
+
+    # Update dropdowns
+    controller1_dropdown['values'] = [c["name"] for c in active_controllers]
+    controller2_dropdown['values'] = [c["name"] for c in active_controllers]
+    print("Controllers refreshed.")
+
 # === GUI Layout ===
 tk.Label(root, text="Driver Station Control", font=("Arial", 16)).pack(pady=10)
 tk.Label(root, textvariable=status_var, font=("Arial", 12)).pack(pady=5)
 tk.Button(root, text="Standby", width=20, command=lambda: set_status("standby")).pack(pady=2)
 tk.Button(root, text="Teleop", width=20, command=lambda: set_status("teleop")).pack(pady=2)
+tk.Button(root, text="Refresh Controllers", width=20, command=refresh_controllers).pack(pady=5)
 
 # Robot 1
 frame1 = tk.LabelFrame(root, text="Robot 1", padx=10, pady=10)
@@ -111,3 +131,4 @@ Thread(target=broadcast_game_status, daemon=True).start()
 # === Run GUI ===
 root.mainloop()
 broadcast_socket.close()
+
