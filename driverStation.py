@@ -47,8 +47,12 @@ def set_status(new_status):
 def encode_controller_data(controller, robot_name):
     name_bytes = robot_name.encode()[:16].ljust(16, b'\x00')
     axes = [int((controller.get_axis(i) * 127) + 127) & 0xFF for i in range(6)]
-    buttons = sum((controller.get_button(i) << i) for i in range(2))
+    
+    # Read up to 16 buttons (adjust as needed)
+    buttons = sum((controller.get_button(i) << i) for i in range(4))
+    
     return struct.pack('16s6B2B', name_bytes, *axes, buttons & 0xFF, (buttons >> 8) & 0xFF)
+
 
 def send_controller_data():
     while True:
@@ -59,6 +63,7 @@ def send_controller_data():
                 data = encode_controller_data(controller, robot["name"])
                 broadcast_socket.sendto(data, ("<broadcast>", BROADCAST_PORT))
         time.sleep(0.05)
+
 
 def broadcast_game_status():
     while True:
