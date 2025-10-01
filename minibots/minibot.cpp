@@ -99,14 +99,14 @@ bool Minibot::driveDCMotor(float value) {
   return true;
 }
 
-bool Minibot::drive(int pin, float value) {
-  if (value < -1 || value > 1) {
+bool Minibot::drive(float left, float right) {
+  if (left < -1 || left > 1) || (right < -1 || right > 1) {
     return false;
   }
-  float delayAmt = 0.5 * value + 1.5;
-  digitalWrite(pin, HIGH);
-  delay(delayAmt);
-  digitalWrite(pin, LOW);
+  float delayLeft = 0.5 * left + 1.5;
+  digitalWrite(leftMotorPin, HIGH);
+  delay(delayLeft);
+  digitalWrite(leftMotorPin, LOW);
   delay(10 - delayAmt);
   return true;
 }
