@@ -99,6 +99,18 @@ bool Minibot::driveDCMotor(float value) {
   return true;
 }
 
+bool Minibot::drive(int pin, float value) {
+  if (value < -1 || value > 1) {
+    return false;
+  }
+  float delayAmt = 0.5 * value + 1.5;
+  digitalWrite(pin, HIGH);
+  delay(delayAmt);
+  digitalWrite(pin, LOW);
+  delay(10 - delayAmt);
+  return true;
+}
+
 bool Minibot::driveServoMotor(int angle) {
   if (angle < -50 || angle > 50) {
     return false;

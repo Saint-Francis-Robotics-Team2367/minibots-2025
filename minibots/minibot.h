@@ -64,6 +64,7 @@ public:
 
   // Drive motors
   bool driveDCMotor(float value);     // value between -1 and 1
+  bool drive(int pin, float value); // value between -1 and 1
   bool driveServoMotor(int angle);    // angle between -50 and 50
 };
 
