@@ -5,8 +5,7 @@
 Minibot bot("YOUR NAME HERE");
 
 void setup() {
-  // Initialize the minibot (connects to WiFi and sets up motors)
-  bot.init();
+  
 }
 
 void loop() {
