@@ -122,7 +122,7 @@ bool Minibot::driveLeft(float value) {
   return true;
 }
   
-bool Minibot::driveLeft(float value) {
+bool Minibot::driveRight(float value) {
   if (value < -1 || value > 1) 
   {
     return false;
