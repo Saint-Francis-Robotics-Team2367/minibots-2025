@@ -13,15 +13,15 @@ const int SERVO_PWM_CHANNEL = 3;
 
 // WiFi Configuration (define these in your main file or config)
 #ifndef WIFI_SSID
-#define WIFI_SSID "your_wifi_ssid"
+#define WIFI_SSID "WATCHTOWER"
 #endif
 
 #ifndef WIFI_PASSWORD
-#define WIFI_PASSWORD "your_wifi_password"
+#define WIFI_PASSWORD "lancerrobotics"
 #endif
 
 #ifndef UDP_PORT
-#define UDP_PORT 8888
+#define UDP_PORT 2367
 #endif
 
 class Minibot {
