@@ -13,10 +13,11 @@ const int SERVO_PWM_CHANNEL = 3;
 const int freq = 100;
 const int resolution = 16;
 
-// WiFi Configuration (define these in your main file or config)
+// WiFi Configuration
 #define WIFI_SSID "WATCHTOWER"
 #define WIFI_PASSWORD "lancerrobotics"
-#define UDP_PORT 2367
+#define DISCOVERY_PORT 12345
+#define COMMAND_PORT_BASE 12346
 
 class Minibot {
 private:
@@ -25,47 +26,55 @@ private:
     int rightPin;
     int dcMotorPin;
     int servoMotorPin;
-    
+
     int leftX;
     int leftY;
     int rightX;
     int rightY;
-    
+
     bool cross;
     bool circle;
     bool square;
     bool triangle;
-    
+
     String gameStatus;
-    
+    bool emergencyStop;
+    bool connected;
+    unsigned int assignedPort;
+    unsigned long lastPingTime;
+    unsigned long lastCommandTime;
+
     WiFiUDP udp;
     char incomingPacket[256];
-    
+
+    void sendDiscoveryPing();
+    void stopAllMotors();
+
 
 public:
     // Constructor
-    Minibot(const char* robotId, 
+    Minibot(const char* robotId,
           int leftMotorPin = 16, int rightMotorPin = 17,
           int dcMotorPin = 18, int servoMotorPin = 19);
-    
+
     // Update controller state from UDP packets
     void updateController();
-    
+
     // Getter methods for joystick axes
     int getLeftX();
     int getLeftY();
     int getRightX();
     int getRightY();
-    
+
     // Getter methods for buttons
     bool getCross();
     bool getCircle();
     bool getSquare();
     bool getTriangle();
-    
+
     // Get game status
     String getGameStatus();
-    
+
     // Motor control methods
     bool driveDCMotor(float value);      // value: -1.0 to 1.0
     bool driveLeft(float value);         // value: -1.0 to 1.0

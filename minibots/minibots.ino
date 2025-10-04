@@ -5,13 +5,13 @@
 Minibot bot("YOUR NAME HERE");
 
 void setup() {
-  
+
 }
 
 void loop() {
   // Update controller values from the remote
   bot.updateController();
-  
+
   // TODO: Write your robot control code here
-  
+
 }
