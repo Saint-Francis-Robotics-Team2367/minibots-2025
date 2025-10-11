@@ -4,11 +4,13 @@ Welcome to the Minibot programming guide! This document will teach you everythin
 
 ## Table of Contents
 1. [Getting Started](#getting-started)
-2. [Setup Functions](#setup-functions)
-3. [Getting Controller Input](#getting-controller-input)
-4. [Controlling Motors](#controlling-motors)
-5. [Game Status](#game-status)
-6. [Complete Example Snippets](#complete-example-snippets)
+2. [How Your Robot Connects](#how-your-robot-connects)
+3. [Setup Functions](#setup-functions)
+4. [Getting Controller Input](#getting-controller-input)
+5. [Controlling Motors](#controlling-motors)
+6. [Game Status](#game-status)
+7. [Emergency Stop](#emergency-stop)
+8. [Complete Example Snippets](#complete-example-snippets)
 
 ---
 
@@ -44,26 +46,80 @@ Minibot bot("Alice");
 
 ---
 
+## How Your Robot Connects
+
+Your robot uses a smart connection system to find and connect to the driver station. Here's what happens automatically behind the scenes:
+
+### Discovery Mode
+
+When your robot first starts up, it enters **discovery mode**:
+- It connects to the WiFi network "WATCHTOWER"
+- Every 2 seconds, it sends out a "discovery ping" broadcast message
+- This message says: "Hey! I'm here! My name is [your robot name]"
+- The driver station listens for these pings and responds when it finds your robot
+
+**What you see:**
+- The Serial Monitor will show "Sent discovery ping: DISCOVER:YourName:192.168.x.x"
+- Your robot is announcing itself and waiting to be found
+
+### Port Assignment
+
+Once the driver station hears your robot's discovery ping:
+- It assigns your robot a unique port number (like a private communication channel)
+- It sends back a "PORT" message with your assigned port
+- Your robot switches from the discovery port (12345) to this assigned port
+- Now you have a dedicated connection!
+
+**What you see:**
+- The Serial Monitor will show "Assigned port 12346 - connected!"
+- Your robot is now fully connected and ready to receive commands
+
+### Connection Timeout
+
+Your robot is smart about staying connected:
+- If it doesn't receive any commands for **5 seconds**, it assumes the connection was lost
+- It automatically goes back to discovery mode to reconnect
+- All motors stop for safety when disconnected
+
+**Why this matters:**
+- If the driver station crashes or loses connection, your robot won't run wild
+- It will safely stop and wait to reconnect
+- You'll see "Connection timeout - reverting to discovery mode" in the Serial Monitor
+
+### What This Means For You
+
+**Good news:** You don't have to do anything! This all happens automatically.
+
+Just create your robot with its name, and the library handles:
+- Finding the driver station
+- Getting assigned a port
+- Reconnecting if something goes wrong
+- Stopping motors safely when disconnected
+
+---
+
 ## Setup Functions
 
-### `bot.init()`
+### Automatic Initialization
 
-**What it does:** Initializes (starts up) your robot. This connects to WiFi, sets up the motors, and gets everything ready.
+**Good news:** Your robot initializes automatically when it's created!
 
-**When to use:** Call this once inside `setup()`, and nowhere else.
+When you create your Minibot with `Minibot bot("YourName");`, it automatically:
+- Connects to the WiFi network "WATCHTOWER"
+- Sets up all the motor pins with PWM (Pulse Width Modulation)
+- Starts the UDP discovery system
+- Stops all motors (safe starting position)
+- Prints connection information to the Serial Monitor
 
-**How to use:**
-```cpp
-void setup() {
-  bot.init();  // Always put this in setup!
-}
+**What you'll see in Serial Monitor:**
+```
+Connecting to WiFi...
+Connected! IP: 192.168.1.100
+Listening on discovery port 12345
+Sent discovery ping: DISCOVER:YourName:192.168.1.100
 ```
 
-**What happens:**
-- Connects to the WiFi network
-- Sets up all the motor pins
-- Starts listening for controller commands
-- Prints information to the Serial Monitor
+**What this means:** You don't need to call any special setup function! Just create your robot, and you're ready to go.
 
 ---
 
@@ -418,6 +474,51 @@ if (status == "teleop") {
 
 ---
 
+## Emergency Stop
+
+The robot has a built-in emergency stop (ESTOP) feature for safety. This is controlled by the driver station, not your code.
+
+### What is Emergency Stop?
+
+**Emergency stop** is a safety feature that immediately stops all motors on your robot. When activated:
+- **All motors stop instantly** (drive motors, DC motor, and servo motor)
+- **Motor commands are ignored** - even if your code tries to move motors, they won't respond
+- **The robot stays stopped** until the emergency stop is released
+
+### When Does It Activate?
+
+The driver station operator can activate emergency stop:
+- By pressing the emergency stop button on the driver station
+- When something goes wrong and they need to stop the robot immediately
+- For safety during setup or troubleshooting
+
+### What You'll See
+
+**When emergency stop activates:**
+- Serial Monitor shows: "EMERGENCY STOP ACTIVATED"
+- All motors stop immediately
+- Your robot is frozen (safe state)
+
+**When emergency stop is released:**
+- Serial Monitor shows: "Emergency stop released"
+- Robot returns to normal operation
+- Your code can control motors again
+
+### Do You Need to Do Anything?
+
+**Nope!** Emergency stop is handled automatically by the library.
+
+- You don't need to write any code for emergency stop
+- You don't need to check if emergency stop is active
+- Your motor commands will automatically work or not work based on the emergency stop state
+
+**Why this matters:**
+- Safety first! If something goes wrong, the driver station can immediately stop your robot
+- You can focus on writing your robot code without worrying about emergency stop logic
+- The system handles it all in the background
+
+---
+
 ## Complete Example Snippets
 
 Here are some common patterns you'll use. Remember: these go in the `loop()` function!
@@ -506,11 +607,12 @@ Here's the complete structure of a robot program:
 #include "minibot.h"
 
 // Create your robot (put your name here!)
+// This automatically connects to WiFi and sets everything up
 Minibot bot("YourName");
 
 void setup() {
-  // Initialize the robot - runs once at startup
-  bot.init();
+  // Nothing needed here! The robot initializes automatically when created
+  // You can add your own setup code here if needed
 }
 
 void loop() {
@@ -614,7 +716,6 @@ void loop() {
 
 | Function | What It Does | Returns |
 |----------|-------------|---------|
-| `bot.init()` | Start up the robot | Nothing |
 | `bot.updateController()` | Get latest controller data | Nothing |
 | `bot.getLeftX()` | Left joystick left/right | 0-255 (125=center) |
 | `bot.getLeftY()` | Left joystick up/down | 0-255 (130=center) |
