@@ -30,5 +30,16 @@ void loop() {
     else {
       bot.driveServoMotor(0);//center
     }
+
+    //DC motor usage
+    if (bot.getCross()){
+      bot.driveDCMotor(1);
+    }
+    else if(bot.getCircle()){
+      bot.driveDCMotor(-1);
+    }
+    else{
+      bot.driveDCMotor(0);
+    }
   } 
 }
