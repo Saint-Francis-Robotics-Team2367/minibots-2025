@@ -1,26 +1,27 @@
 #include "minibot.h"
 
 // Constructor
-Minibot::Minibot(const char* robotId, 
+Minibot::Minibot(const char* robotId,
                  int leftMotorPin, int rightMotorPin,
                  int dcMotorPin, int servoMotorPin)
-  : robotId(robotId),
-    leftPin(leftMotorPin), rightPin(rightMotorPin),
-    dcMotorPin(dcMotorPin), servoMotorPin(servoMotorPin),
-    leftX(125), leftY(130), rightX(127), rightY(130),
-    cross(false), circle(false), square(false), triangle(false),
-    gameStatus("standby") {
+                  : robotId(robotId),
+                      leftMotorPin(leftMotorPin), rightMotorPin(rightMotorPin),
+                      dcMotorPin(dcMotorPin), servoMotorPin(servoMotorPin),
+                      leftX(127), leftY(127), rightX(127), rightY(127),
+                      cross(false), circle(false), square(false), triangle(false),
+                      gameStatus("standby"), emergencyStop(false), connected(false),
+                      assignedPort(0), lastPingTime(0), lastCommandTime(0)
+{
+  
 }
 
-// Public functions
-
-void Minibot::init() {
+void Minibot::begin()
+{
   Serial.begin(115200);
-
-  pinMode(leftPin, OUTPUT);
-  pinMode(rightPin, OUTPUT);
-  pinMode(dcMotorPin, OUTPUT);
-  pinMode(servoMotorPin, OUTPUT);
+  ledcAttach(leftMotorPin, freq, resolution);
+  ledcAttach(rightMotorPin, freq, resolution);
+  ledcAttach(dcMotorPin, freq, resolution);
+  ledcAttach(servoMotorPin, freq, resolution);
 
   // Wi-Fi connection
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -34,6 +35,26 @@ void Minibot::init() {
   // Start UDP
   udp.begin(UDP_PORT);
   Serial.println("Listening on UDP port " + String(UDP_PORT));
+
+  // Stop all motors initially
+  stopAllMotors();
+}
+
+
+void Minibot::sendDiscoveryPing() {
+  // Format: "DISCOVER:<robotId>:<IP>"
+  String msg = "DISCOVER:" + String(robotId) + ":" + WiFi.localIP().toString();
+  udp.beginPacket(IPAddress(255, 255, 255, 255), DISCOVERY_PORT);
+  udp.write((const uint8_t*)msg.c_str(), msg.length());
+  udp.endPacket();
+  Serial.println("Sent discovery ping: " + msg);
+}
+
+void Minibot::stopAllMotors() {
+  driveLeftMotor(0);
+  driveRightMotor(0);
+  driveDCMotor(0);
+  driveServoMotor(0);
 }
 
 void Minibot::updateController() {
@@ -88,37 +109,35 @@ bool Minibot::getTriangle() { return triangle; }
 String Minibot::getGameStatus() { return gameStatus; }
 
 bool Minibot::driveDCMotor(float value) {
-  if (value < -1 || value > 1) {
+  if (value < -1 || value > 1)
+  {
     return false;
   }
-  float delayAmt = 0.5 * value + 1.5;
-  digitalWrite(dcMotorPin, HIGH);
-  delay(delayAmt);
-  digitalWrite(dcMotorPin, LOW);
-  delay(10 - delayAmt);
-  return true;
+  return ledcWrite(dcMotorPin, round((value*30)+90));
 }
 
-bool Minibot::drive(int pin, float value) {
-  if (value < -1 || value > 1) {
+bool Minibot::driveLeftMotor(float value) {
+  if (value < -1 || value > 1)
+  {
     return false;
   }
-  float delayAmt = 0.5 * value + 1.5;
-  digitalWrite(pin, HIGH);
-  delay(delayAmt);
-  digitalWrite(pin, LOW);
-  delay(10 - delayAmt);
-  return true;
+  return ledcWrite(leftMotorPin, round((value*30)+90));
+}
+
+bool Minibot::driveRightMotor(float value) {
+  if (value < -1 || value > 1)
+  {
+    return false;
+  }
+  return ledcWrite(rightMotorPin, round((value*30)+90));
 }
 
 bool Minibot::driveServoMotor(int angle) {
   if (angle < -50 || angle > 50) {
     return false;
   }
-  float delayAmt = 0.01 * angle + 1.5;
-  digitalWrite(servoMotorPin, HIGH);
-  delay(delayAmt);
-  digitalWrite(servoMotorPin, LOW);
-  delay(10 - delayAmt);
+  float pulseWidthMs = 0.01 * angle + 1.5;
+  int dutyCycle = (pulseWidthMs / 10.0) * 65535;
+  ledcWrite(servoMotorPin, dutyCycle);
   return true;
 }
