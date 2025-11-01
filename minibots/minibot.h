@@ -19,6 +19,14 @@ const int resolution = 10;
 
 class Minibot {
 private:
+
+    enum class Status
+    {
+        Standby,
+        Teleop,
+        Unknown,
+    }
+
     const char* robotId;
     int leftMotorPin;
     int rightMotorPin;
@@ -29,22 +37,22 @@ private:
     int rightMotorPwmOffset;
     int dcMotorPwmOffset;
 
-    int leftX;
-    int leftY;
-    int rightX;
-    int rightY;
+    int leftX = 127;
+    int leftY = 127;
+    int rightX = 127;
+    int rightY = 127;
 
-    bool cross;
-    bool circle;
-    bool square;
-    bool triangle;
+    bool cross = false;
+    bool circle = false;
+    bool square = false;
+    bool triangle = false;
 
-    String gameStatus;
-    bool emergencyStop;
-    bool connected;
-    unsigned int assignedPort;
-    unsigned long lastPingTime;
-    unsigned long lastCommandTime;
+    Status gameStatus = Status::Standby;
+    bool emergencyStop = false;
+    bool connected = false;
+    unsigned int assignedPort = 0;
+    unsigned long lastPingTime = 0;
+    unsigned long lastCommandTime = 0;
 
     WiFiUDP udp;
     char incomingPacket[256];
@@ -78,7 +86,8 @@ public:
     bool getTriangle();
 
     // Get game status
-    String getGameStatus();
+    Status getGameStatus();
+    Status stringToGameStatus(String string);
 
     // Motor control methods
     bool driveDCMotor(float value);      // value: -1.0 to 1.0

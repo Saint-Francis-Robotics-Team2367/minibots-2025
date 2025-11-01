@@ -11,12 +11,7 @@ Minibot::Minibot(const char* robotId,
                       dcMotorPin(dcMotorPin), servoMotorPin(servoMotorPin),
                       leftMotorPwmOffset(leftMotorPwmOffset),
                       rightMotorPwmOffset(rightMotorPwmOffset),
-                      dcMotorPwmOffset(dcMotorPwmOffset),
-                      leftX(127), leftY(127), rightX(127), rightY(127),
-                      cross(false), circle(false), square(false), triangle(false),
-                      gameStatus("standby"), emergencyStop(false), connected(false),
-                      assignedPort(0), lastPingTime(0), lastCommandTime(0)
-
+                      dcMotorPwmOffset(dcMotorPwmOffset)
 {
   
 }
@@ -74,7 +69,7 @@ void Minibot::updateController() {
     if (packetStr.startsWith(robotId)) {
       int sepIndex = packetStr.indexOf(':');
       if (sepIndex != -1) {
-        gameStatus = packetStr.substring(sepIndex + 1);
+        gameStatus = stringToGameStatus(packetStr.substring(sepIndex + 1));
       }
     }
 
@@ -88,7 +83,7 @@ void Minibot::updateController() {
     memcpy(axes, incomingPacket + 16, 6);
     memcpy(buttons, incomingPacket + 22, 2);
 
-    if (String(robotName) == robotId && gameStatus == "teleop") {
+    if (String(robotName) == robotId && gameStatus == Status::Teleop) {
       leftX = axes[0];
       leftY = axes[1];
       rightX = axes[2];
@@ -112,7 +107,20 @@ bool Minibot::getCircle() { return circle; }
 bool Minibot::getSquare() { return square; }
 bool Minibot::getTriangle() { return triangle; }
 
-String Minibot::getGameStatus() { return gameStatus; }
+Status Minibot::getGameStatus() { return gameStatus; }
+
+Status Minibot::stringToGameStatus(String string)
+{
+    if (string == "standby")
+    {
+      return Status::Standby;
+    }
+    else if (string == "teleop")
+    {
+      return Status::Teleop;
+    }
+    return Status::Unknown;
+}
 
 bool Minibot::driveDCMotor(float value) {
   if (value < -1 || value > 1)
