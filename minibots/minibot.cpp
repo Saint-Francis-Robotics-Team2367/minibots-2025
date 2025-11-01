@@ -3,14 +3,20 @@
 // Constructor
 Minibot::Minibot(const char* robotId,
                  int leftMotorPin, int rightMotorPin,
-                 int dcMotorPin, int servoMotorPin)
+                 int dcMotorPin, int servoMotorPin,
+                 int leftMotorPwmOffset, int rightMotorPwmOffset,
+                 int dcMotorPwmOffset)
                   : robotId(robotId),
                       leftMotorPin(leftMotorPin), rightMotorPin(rightMotorPin),
                       dcMotorPin(dcMotorPin), servoMotorPin(servoMotorPin),
+                      leftMotorPwmOffset(leftMotorPwmOffset),
+                      rightMotorPwmOffset(rightMotorPwmOffset),
+                      dcMotorPwmOffset(dcMotorPwmOffset)
                       leftX(127), leftY(127), rightX(127), rightY(127),
                       cross(false), circle(false), square(false), triangle(false),
                       gameStatus("standby"), emergencyStop(false), connected(false),
                       assignedPort(0), lastPingTime(0), lastCommandTime(0)
+
 {
   
 }
@@ -113,7 +119,7 @@ bool Minibot::driveDCMotor(float value) {
   {
     return false;
   }
-  return ledcWrite(dcMotorPin, round((value*30)+90));
+  return ledcWrite(dcMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+90));
 }
 
 bool Minibot::driveLeftMotor(float value) {
@@ -121,7 +127,7 @@ bool Minibot::driveLeftMotor(float value) {
   {
     return false;
   }
-  return ledcWrite(leftMotorPin, round((value*30)+90));
+  return ledcWrite(leftMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+90));
 }
 
 bool Minibot::driveRightMotor(float value) {
@@ -129,7 +135,7 @@ bool Minibot::driveRightMotor(float value) {
   {
     return false;
   }
-  return ledcWrite(rightMotorPin, round((value*30)+90));
+  return ledcWrite(rightMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+90));
 }
 
 bool Minibot::driveServoMotor(int angle) {

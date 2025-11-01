@@ -15,6 +15,7 @@ const int resolution = 10;
 #define UDP_PORT 2367
 #define DISCOVERY_PORT 12345
 #define COMMAND_PORT_BASE 12346
+#define MOTOR_SPEED_MULTIPLYER 20
 
 class Minibot {
 private:
@@ -23,6 +24,10 @@ private:
     int rightMotorPin;
     int dcMotorPin;
     int servoMotorPin;
+
+    int leftMotorPwmOffset;
+    int rightMotorPwmOffset;
+    int dcMotorPwmOffset;
 
     int leftX;
     int leftY;
@@ -51,7 +56,9 @@ public:
     // Constructor
     Minibot(const char* robotId,
           int leftMotorPin = 16, int rightMotorPin = 17,
-          int dcMotorPin = 18, int servoMotorPin = 19);
+          int dcMotorPin = 18, int servoMotorPin = 19,
+          int leftMotorPwmOffset = 90, int rightMotorPwmOffset = 90,
+          int dcMotorPwmOffset = 90);
 
     void begin();
 
