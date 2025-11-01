@@ -11,7 +11,7 @@ Minibot::Minibot(const char* robotId,
                       dcMotorPin(dcMotorPin), servoMotorPin(servoMotorPin),
                       leftMotorPwmOffset(leftMotorPwmOffset),
                       rightMotorPwmOffset(rightMotorPwmOffset),
-                      dcMotorPwmOffset(dcMotorPwmOffset)
+                      dcMotorPwmOffset(dcMotorPwmOffset),
                       leftX(127), leftY(127), rightX(127), rightY(127),
                       cross(false), circle(false), square(false), triangle(false),
                       gameStatus("standby"), emergencyStop(false), connected(false),
