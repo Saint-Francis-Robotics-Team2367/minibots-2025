@@ -19,14 +19,6 @@ const int resolution = 10;
 
 class Minibot {
 private:
-
-    enum class Status
-    {
-        Standby,
-        Teleop,
-        Unknown,
-    }
-
     const char* robotId;
     int leftMotorPin;
     int rightMotorPin;
@@ -47,7 +39,6 @@ private:
     bool square = false;
     bool triangle = false;
 
-    Status gameStatus = Status::Standby;
     bool emergencyStop = false;
     bool connected = false;
     unsigned int assignedPort = 0;
@@ -61,6 +52,15 @@ private:
 
 
 public:
+    enum Status
+    {
+        Standby,
+        Teleop,
+        Unknown,
+    };
+
+    Status gameStatus = Status::Standby;
+    
     // Constructor
     Minibot(const char* robotId,
           int leftMotorPin = 16, int rightMotorPin = 17,

@@ -107,9 +107,9 @@ bool Minibot::getCircle() { return circle; }
 bool Minibot::getSquare() { return square; }
 bool Minibot::getTriangle() { return triangle; }
 
-Status Minibot::getGameStatus() { return gameStatus; }
+Minibot::Status Minibot::getGameStatus() { return gameStatus; }
 
-Status Minibot::stringToGameStatus(String string)
+Minibot::Status Minibot::stringToGameStatus(String string)
 {
     if (string == "standby")
     {
