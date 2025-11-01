@@ -123,27 +123,18 @@ Minibot::Status Minibot::stringToGameStatus(String string)
 }
 
 bool Minibot::driveDCMotor(float value) {
-  if (value < -1 || value > 1)
-  {
-    return false;
-  }
-  return ledcWrite(dcMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+dcMotorPwmOffset));
+  float clampedVal = std::clamp(value*MOTOR_SPEED_MULTIPLYER, -20.0f, 20.0f);
+  return ledcWrite(dcMotorPin, round(clampedVal + dcMotorPwmOffset));
 }
 
 bool Minibot::driveLeftMotor(float value) {
-  if (value < -1 || value > 1)
-  {
-    return false;
-  }
-  return ledcWrite(leftMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+leftMotorPwmOffset));
+  float clampedVal = std::clamp(value*MOTOR_SPEED_MULTIPLYER, -20.0f, 20.0f);
+  return ledcWrite(leftMotorPin, round(clampedVal+leftMotorPwmOffset));
 }
 
 bool Minibot::driveRightMotor(float value) {
-  if (value < -1 || value > 1)
-  {
-    return false;
-  }
-  return ledcWrite(rightMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+rightMotorPwmOffset));
+  float clampedVal = std::clamp(value*MOTOR_SPEED_MULTIPLYER, -20.0f, 20.0f);
+  return ledcWrite(rightMotorPin, round(clampedVal+rightMotorPwmOffset));
 }
 
 bool Minibot::driveServoMotor(int angle) {
