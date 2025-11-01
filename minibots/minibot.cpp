@@ -119,7 +119,7 @@ bool Minibot::driveDCMotor(float value) {
   {
     return false;
   }
-  return ledcWrite(dcMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+90));
+  return ledcWrite(dcMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+dcMotorPwmOffset));
 }
 
 bool Minibot::driveLeftMotor(float value) {
@@ -127,7 +127,7 @@ bool Minibot::driveLeftMotor(float value) {
   {
     return false;
   }
-  return ledcWrite(leftMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+90));
+  return ledcWrite(leftMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+leftMotorPwmOffset));
 }
 
 bool Minibot::driveRightMotor(float value) {
@@ -135,7 +135,7 @@ bool Minibot::driveRightMotor(float value) {
   {
     return false;
   }
-  return ledcWrite(rightMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+90));
+  return ledcWrite(rightMotorPin, round((value*MOTOR_SPEED_MULTIPLYER)+rightMotorPwmOffset));
 }
 
 bool Minibot::driveServoMotor(int angle) {
