@@ -48,8 +48,6 @@ private:
     WiFiUDP udp;
     char incomingPacket[256];
 
-    void sendDiscoveryPing();
-
 
 public:
     enum Status

@@ -8,16 +8,12 @@ import struct
 
 # === Configuration ===
 BROADCAST_PORT = 2367
-robots = [
-    {"name": "minibot_ex", "controller": None},
-    {"name": "minibot_2", "controller": None}
-]
+robots = []
+comm_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+comm_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+comm_socket.bind(('', BROADCAST_PORT))
+comm_socket.setblocking(False)
 
-# === UDP Setup ===
-broadcast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-broadcast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
-# === Game State ===
 game_status = "standby"
 
 # === Pygame Controller Setup ===
@@ -44,32 +40,53 @@ def set_status(new_status):
     game_status = new_status
     status_var.set(f"Status: {new_status.capitalize()}")
 
-def encode_controller_data(controller, robot_name):
-    name_bytes = robot_name.encode()[:16].ljust(16, b'\x00')
+def encode_controller_data(controller):
     axes = [int((controller.get_axis(i) * 127) + 127) & 0xFF for i in range(6)]
     
     # Read up to 16 buttons (adjust as needed)
     buttons = sum((controller.get_button(i) << i) for i in range(4))
     
-    return struct.pack('16s6B2B', name_bytes, *axes, buttons & 0xFF, (buttons >> 8) & 0xFF)
+    return struct.pack('6B2B', *axes, buttons & 0xFF, (buttons >> 8) & 0xFF)
 
+def discover_robots():
+    while True:
+        comm_socket.sendto(b"ping", ('255.255.255.255', BROADCAST_PORT))
+        try:
+            data, addr = comm_socket.recvfrom(1024)
+            if data.startswith(b"pong:"):
+                name = data[5:].decode().strip()
+
+                # Check if already known
+                existing = next((r for r in robots if r["name"] == name), None)
+                if not existing:
+                    robots.append({"name": name, "controller": None, "addr": addr})
+                    print(f"Discovered new robot: {name} at {addr}")
+
+                    robot1_dropdown['values'] = [r["name"] for r in robots]
+                    robot2_dropdown['values'] = [r["name"] for r in robots]
+                else:
+                    existing["addr"] = addr
+        except BlockingIOError:
+            pass
+        time.sleep(0.05)
 
 def send_controller_data():
     while True:
         pygame.event.pump()
         for robot in robots:
             controller = robot["controller"]
-            if controller:
-                data = encode_controller_data(controller, robot["name"])
-                broadcast_socket.sendto(data, ("<broadcast>", BROADCAST_PORT))
+            if controller and "addr" in robot:
+                data = encode_controller_data(controller)
+                comm_socket.sendto(data, robot["addr"])
         time.sleep(0.05)
 
 
 def broadcast_game_status():
     while True:
         for robot in robots:
-            packet = f"{robot['name']}:{game_status}".encode()
-            broadcast_socket.sendto(packet, ("<broadcast>", BROADCAST_PORT))
+            if "addr" in robot:
+                packet = f"{robot['name']}:{game_status}".encode()
+                comm_socket.sendto(packet, robot["addr"])
         time.sleep(1)
 
 def connect_robot(robot_name, controller_name):
@@ -130,10 +147,10 @@ controller2_dropdown.pack()
 tk.Button(frame2, text="Connect", command=lambda: connect_robot(robot2_var.get(), controller2_var.get())).pack()
 
 # === Threads ===
+Thread(target=discover_robots, daemon=True).start()
 Thread(target=send_controller_data, daemon=True).start()
 Thread(target=broadcast_game_status, daemon=True).start()
 
 # === Run GUI ===
 root.mainloop()
-broadcast_socket.close()
-
+comm_socket.close()

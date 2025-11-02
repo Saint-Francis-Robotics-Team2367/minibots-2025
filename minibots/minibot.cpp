@@ -41,16 +41,6 @@ void Minibot::begin()
   stopAllMotors();
 }
 
-
-void Minibot::sendDiscoveryPing() {
-  // Format: "DISCOVER:<robotId>:<IP>"
-  String msg = "DISCOVER:" + String(robotId) + ":" + WiFi.localIP().toString();
-  udp.beginPacket(IPAddress(255, 255, 255, 255), DISCOVERY_PORT);
-  udp.write((const uint8_t*)msg.c_str(), msg.length());
-  udp.endPacket();
-  Serial.println("Sent discovery ping: " + msg);
-}
-
 void Minibot::stopAllMotors() {
   driveLeftMotor(0);
   driveRightMotor(0);
@@ -60,40 +50,51 @@ void Minibot::stopAllMotors() {
 
 void Minibot::updateController() {
   int packetSize = udp.parsePacket();
-  if (packetSize) {
-    int len = udp.read(incomingPacket, 255);
-    if (len > 0) incomingPacket[len] = '\0';
+  if (!packetSize) return;
 
-    // Check if it's a game status packet (text format)
-    String packetStr = String(incomingPacket);
-    if (packetStr.startsWith(robotId)) {
-      int sepIndex = packetStr.indexOf(':');
-      if (sepIndex != -1) {
-        gameStatus = stringToGameStatus(packetStr.substring(sepIndex + 1));
-      }
+  int len = udp.read(incomingPacket, 255);
+  if (len <= 0) return;
+  incomingPacket[len] = '\0';
+
+  String packetStr = String(incomingPacket);
+
+  // --- respond to PC discovery ping ---
+  if (packetStr == "ping" && !connected) {
+    String reply = "pong:" + String(robotId);
+    udp.beginPacket(udp.remoteIP(), udp.remotePort());
+    udp.write((const uint8_t*)reply.c_str(), reply.length());
+    udp.endPacket();
+    Serial.println("Replied to ping from " + udp.remoteIP().toString());
+    connected = true;
+    return;
+  }
+
+  // --- handle game status or control data ---
+  if (packetStr.startsWith(robotId)) {
+    int sepIndex = packetStr.indexOf(':');
+    if (sepIndex != -1) {
+      gameStatus = stringToGameStatus(packetStr.substring(sepIndex + 1));
+      return;
     }
+  }
 
-    // Decode controller data (binary format)
-    char robotName[17];
-    uint8_t axes[6];
-    uint8_t buttons[2];
+  uint8_t axes[6];
+  uint8_t buttons[2];
 
-    memcpy(robotName, incomingPacket, 16);
-    robotName[16] = '\0';
-    memcpy(axes, incomingPacket + 16, 6);
-    memcpy(buttons, incomingPacket + 22, 2);
+  memcpy(axes, incomingPacket, 6);
+  memcpy(buttons, incomingPacket + 6, 2);
 
-    if (String(robotName) == robotId && gameStatus == Status::Teleop) {
-      leftX = axes[0];
-      leftY = axes[1];
-      rightX = axes[2];
-      rightY = axes[3];
+  if (gameStatus == Status::Teleop) {
+    leftX = axes[0];
+    leftY = axes[1];
+    rightX = axes[2];
+    rightY = axes[3];
 
-      cross = buttons[0] & 0x01;
-      circle = buttons[0] & 0x02;
-      square = buttons[0] & 0x04;
-      triangle = buttons[0] & 0x08;
-    }
+    cross = buttons[0] & 0x01;
+    circle = buttons[0] & 0x02;
+    square = buttons[0] & 0x04;
+    triangle = buttons[0] & 0x08;
+    
   }
 }
 
