@@ -56,6 +56,30 @@ void Minibot::updateController() {
   if (len <= 0) return;
   incomingPacket[len] = '\0';
 
+  // Check if packet is binary controller data (8 bytes) or text command
+  if (len == 8) {
+    // This is binary controller data
+    uint8_t axes[6];
+    uint8_t buttons[2];
+
+    memcpy(axes, incomingPacket, 6);
+    memcpy(buttons, incomingPacket + 6, 2);
+
+    if (gameStatus == Status::Teleop) {
+      leftX = axes[0];
+      leftY = axes[1];
+      rightX = axes[2];
+      rightY = axes[3];
+
+      cross = buttons[0] & 0x01;
+      circle = buttons[0] & 0x02;
+      square = buttons[0] & 0x04;
+      triangle = buttons[0] & 0x08;
+    }
+    return;
+  }
+
+  // Otherwise, treat as text command
   String packetStr = String(incomingPacket);
 
   // --- respond to PC discovery ping ---
@@ -64,7 +88,6 @@ void Minibot::updateController() {
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
     udp.write((const uint8_t*)reply.c_str(), reply.length());
     udp.endPacket();
-    Serial.println("Replied to ping from " + udp.remoteIP().toString());
     connected = true;
     return;
   }
@@ -76,25 +99,6 @@ void Minibot::updateController() {
       gameStatus = stringToGameStatus(packetStr.substring(sepIndex + 1));
       return;
     }
-  }
-
-  uint8_t axes[6];
-  uint8_t buttons[2];
-
-  memcpy(axes, incomingPacket, 6);
-  memcpy(buttons, incomingPacket + 6, 2);
-
-  if (gameStatus == Status::Teleop) {
-    leftX = axes[0];
-    leftY = axes[1];
-    rightX = axes[2];
-    rightY = axes[3];
-
-    cross = buttons[0] & 0x01;
-    circle = buttons[0] & 0x02;
-    square = buttons[0] & 0x04;
-    triangle = buttons[0] & 0x08;
-    
   }
 }
 
