@@ -24,7 +24,4 @@ void loop() {
     bot.driveLeftMotor(left);
     bot.driveRightMotor(right);
   }
-  
-  // Add delay to match controller update rate (50ms in driver station)
-  delay(20);  // 20ms = 50Hz update rate, smooth motor control
 }
