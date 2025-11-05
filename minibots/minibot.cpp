@@ -49,23 +49,6 @@ void Minibot::stopAllMotors() {
 }
 
 void Minibot::updateController() {
-  // Send discovery pings if not connected (every 2 seconds)
-  unsigned long now = millis();
-  if (!connected && (now - lastPingTime > 2000)) {
-    sendDiscoveryPing();
-    lastPingTime = now;
-  }
-
-  // Check for timeout (5 seconds without command = disconnect)
-  if (connected && (now - lastCommandTime > 5000)) {
-    Serial.println("Connection timeout - reverting to discovery mode");
-    connected = false;
-    assignedPort = 0;
-    udp.stop();
-    udp.begin(DISCOVERY_PORT);
-    stopAllMotors();
-  }
-
   int packetSize = udp.parsePacket();
   if (!packetSize) return;
 
