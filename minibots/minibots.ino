@@ -1,7 +1,7 @@
 #include "minibot.h"
 
 // Create your robot (put your name here!)
-Minibot bot("ENTER ROBOT NAME HERE", 16, 17, 18, 19, 90, 90);
+Minibot bot("Crackens", 16, 18, 17, 19, 80, 90);
 
 float left = 0.0;
 float right = 0.0;
@@ -24,7 +24,4 @@ void loop() {
     bot.driveLeftMotor(left);
     bot.driveRightMotor(right);
   }
-  
-  // Add delay to match controller update rate (50ms in driver station)
-  delay(20);  // 20ms = 50Hz update rate, smooth motor control
 }
