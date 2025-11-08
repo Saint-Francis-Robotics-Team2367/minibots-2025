@@ -5,14 +5,19 @@ from tkinter import ttk
 from threading import Thread
 import time
 import struct
+import signal
+import sys
 
 # === Configuration ===
 BROADCAST_PORT = 2367
 robots = []
 comm_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 comm_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+comm_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 comm_socket.bind(('', BROADCAST_PORT))
 comm_socket.setblocking(False)
+
+running = True
 
 game_status = "standby"
 
@@ -49,8 +54,14 @@ def encode_controller_data(controller):
     return struct.pack('6B2B', *axes, buttons & 0xFF, (buttons >> 8) & 0xFF)
 
 def discover_robots():
-    while True:
-        comm_socket.sendto(b"ping", ('255.255.255.255', BROADCAST_PORT))
+    while running:
+        try:
+            comm_socket.sendto(b"ping", ('255.255.255.255', BROADCAST_PORT))
+        except Exception as e:
+            if running:
+                print(f"Error sending ping: {e}")
+            break
+        
         try:
             data, addr = comm_socket.recvfrom(1024)
             if data.startswith(b"pong:"):
@@ -68,25 +79,39 @@ def discover_robots():
                     existing["addr"] = addr
         except BlockingIOError:
             pass
+        except Exception as e:
+            if running:
+                print(f"Error in discovery: {e}")
+            break
         time.sleep(0.05)
 
 def send_controller_data():
-    while True:
+    while running:
         pygame.event.pump()
         for robot in robots:
             controller = robot["controller"]
             if controller and "addr" in robot:
-                data = encode_controller_data(controller)
-                comm_socket.sendto(data, robot["addr"])
+                try:
+                    data = encode_controller_data(controller)
+                    comm_socket.sendto(data, robot["addr"])
+                except Exception as e:
+                    if running:
+                        print(f"Error sending controller data: {e}")
+                    break
         time.sleep(0.05)
 
 
 def broadcast_game_status():
-    while True:
+    while running:
         for robot in robots:
             if "addr" in robot:
-                packet = f"{robot['name']}:{game_status}".encode()
-                comm_socket.sendto(packet, robot["addr"])
+                try:
+                    packet = f"{robot['name']}:{game_status}".encode()
+                    comm_socket.sendto(packet, robot["addr"])
+                except Exception as e:
+                    if running:
+                        print(f"Error broadcasting status: {e}")
+                    break
         time.sleep(1)
 
 def connect_robot(robot_name, controller_name):
@@ -146,11 +171,40 @@ controller2_dropdown = ttk.Combobox(frame2, textvariable=controller2_var, values
 controller2_dropdown.pack()
 tk.Button(frame2, text="Connect", command=lambda: connect_robot(robot2_var.get(), controller2_var.get())).pack()
 
+# === Shutdown Handler ===
+def cleanup():
+    global running
+    print("\nShutting down gracefully...")
+    running = False
+    time.sleep(0.2)  # Give threads time to stop
+    try:
+        comm_socket.close()
+        print("Socket closed successfully")
+    except Exception as e:
+        print(f"Error closing socket: {e}")
+
+def on_closing():
+    cleanup()
+    root.destroy()
+
+root.protocol("WM_DELETE_WINDOW", on_closing)
+
+def signal_handler(sig, frame):
+    print("\nCaught Ctrl+C...")
+    cleanup()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
 # === Threads ===
 Thread(target=discover_robots, daemon=True).start()
 Thread(target=send_controller_data, daemon=True).start()
 Thread(target=broadcast_game_status, daemon=True).start()
 
 # === Run GUI ===
-root.mainloop()
-comm_socket.close()
+try:
+    root.mainloop()
+except KeyboardInterrupt:
+    print("\nInterrupted")
+finally:
+    cleanup()

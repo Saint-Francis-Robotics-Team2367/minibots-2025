@@ -15,7 +15,7 @@ const int resolution = 10;
 #define UDP_PORT 2367
 #define DISCOVERY_PORT 12345
 #define COMMAND_PORT_BASE 12346
-#define MOTOR_SPEED_MULTIPLYER 20
+#define MOTOR_SPEED_MULTIPLYER 10
 
 class Minibot {
 private:

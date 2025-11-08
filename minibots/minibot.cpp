@@ -83,12 +83,15 @@ void Minibot::updateController() {
   String packetStr = String(incomingPacket);
 
   // --- respond to PC discovery ping ---
-  if (packetStr == "ping" && !connected) {
+  if (packetStr == "ping") {
     String reply = "pong:" + String(robotId);
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
     udp.write((const uint8_t*)reply.c_str(), reply.length());
     udp.endPacket();
-    connected = true;
+    if (!connected) {
+      Serial.println("Responded to discovery ping from " + udp.remoteIP().toString());
+      connected = true;
+    }
     return;
   }
 
