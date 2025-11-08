@@ -106,25 +106,26 @@ def encode_controller_data(controller):
     
     return struct.pack('6B2B', *axes, buttons & 0xFF, (buttons >> 8) & 0xFF)
 
-def update_robot_dropdowns():
-    """Update the robot dropdown menus - must be called from main thread"""
-    robot_names = [r["name"] for r in robots]
-    robot1_dropdown['values'] = robot_names
-    robot2_dropdown['values'] = robot_names
-
 def discover_robots():
     ping_count = 0
+    last_ping_time = 0
     while running:
-        try:
-            comm_socket.sendto(b"ping", (broadcast_addr, BROADCAST_PORT))
-            ping_count += 1
-            if ping_count % 20 == 0:  # Print every second (20 * 0.05s)
-                print(f"Sent {ping_count} pings, discovered {len(robots)} robot(s)")
-        except Exception as e:
-            if running:
-                print(f"Error sending ping: {e}")
-            break
+        current_time = time.time()
         
+        # Send ping every 0.5 seconds (not every loop iteration)
+        if current_time - last_ping_time >= 0.5:
+            try:
+                comm_socket.sendto(b"ping", (broadcast_addr, BROADCAST_PORT))
+                ping_count += 1
+                last_ping_time = current_time
+                if ping_count % 10 == 0:  # Print every 5 seconds (10 * 0.5s)
+                    print(f"Sent {ping_count} pings, discovered {len(robots)} robot(s)")
+            except Exception as e:
+                if running:
+                    print(f"Error sending ping: {e}")
+                break
+        
+        # Check for responses multiple times per ping cycle
         try:
             data, addr = comm_socket.recvfrom(1024)
             if data.startswith(b"pong:"):
@@ -137,8 +138,8 @@ def discover_robots():
                     robots.append({"name": name, "controller": None, "addr": addr})
                     print(f"✓ Discovered new robot: {name} at {addr}")
 
-                    # Schedule GUI update on main thread (thread-safe!)
-                    root.after(0, update_robot_dropdowns)
+                    robot1_dropdown['values'] = [r["name"] for r in robots]
+                    robot2_dropdown['values'] = [r["name"] for r in robots]
                 else:
                     existing["addr"] = addr
         except BlockingIOError:
@@ -147,7 +148,8 @@ def discover_robots():
             if running:
                 print(f"Error in discovery: {e}")
             break
-        time.sleep(0.05)
+        
+        time.sleep(0.02)  # Check for responses more frequently
 
 def send_controller_data():
     while running:
