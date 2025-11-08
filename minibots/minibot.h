@@ -11,7 +11,7 @@ const int resolution = 10;
 
 // WiFi Configuration
 #define WIFI_SSID "WATCHTOWER"
-#define WIFI_PASSWORD "lancerrobotics"
+#define WIFI_PASSWORD "lancerrobotic"
 #define UDP_PORT 2367
 #define DISCOVERY_PORT 12345
 #define COMMAND_PORT_BASE 12346

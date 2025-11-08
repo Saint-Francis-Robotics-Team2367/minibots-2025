@@ -1,7 +1,7 @@
 #include "minibot.h"
 
 // Create your robot (put your name here!)
-Minibot bot("ENTER ROBOT NAME HERE", 16, 17, 18, 19, 90, 90);
+Minibot bot("Metal Monkeys", 18, 19, 1, 1, 75, 75);
 
 float left = 0.0;
 float right = 0.0;

@@ -10,6 +10,7 @@ import struct
 BROADCAST_PORT = 2367
 robots = []
 comm_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+comm_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 comm_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 comm_socket.bind(('', BROADCAST_PORT))
 comm_socket.setblocking(False)
