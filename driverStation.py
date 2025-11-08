@@ -106,6 +106,12 @@ def encode_controller_data(controller):
     
     return struct.pack('6B2B', *axes, buttons & 0xFF, (buttons >> 8) & 0xFF)
 
+def update_robot_dropdowns():
+    """Update the robot dropdown menus - must be called from main thread"""
+    robot_names = [r["name"] for r in robots]
+    robot1_dropdown['values'] = robot_names
+    robot2_dropdown['values'] = robot_names
+
 def discover_robots():
     ping_count = 0
     while running:
@@ -131,8 +137,8 @@ def discover_robots():
                     robots.append({"name": name, "controller": None, "addr": addr})
                     print(f"✓ Discovered new robot: {name} at {addr}")
 
-                    robot1_dropdown['values'] = [r["name"] for r in robots]
-                    robot2_dropdown['values'] = [r["name"] for r in robots]
+                    # Schedule GUI update on main thread (thread-safe!)
+                    root.after(0, update_robot_dropdowns)
                 else:
                     existing["addr"] = addr
         except BlockingIOError:
