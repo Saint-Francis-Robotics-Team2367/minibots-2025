@@ -8,9 +8,59 @@ import struct
 import signal
 import sys
 
+try:
+    import netifaces
+    NETIFACES_AVAILABLE = True
+except ImportError:
+    NETIFACES_AVAILABLE = False
+    print("Warning: netifaces module not found. Install with: pip install netifaces")
+
 # === Configuration ===
 BROADCAST_PORT = 2367
 robots = []
+
+# Get the broadcast address for the active network interface
+def get_broadcast_address():
+    """Get the broadcast address of the network interface"""
+    if NETIFACES_AVAILABLE:
+        try:
+            # Get all network interfaces
+            for interface in netifaces.interfaces():
+                addrs = netifaces.ifaddresses(interface)
+                # Check if interface has IPv4
+                if netifaces.AF_INET in addrs:
+                    for addr_info in addrs[netifaces.AF_INET]:
+                        ip = addr_info.get('addr')
+                        broadcast = addr_info.get('broadcast')
+                        # Skip loopback
+                        if ip and broadcast and not ip.startswith('127.'):
+                            print(f"Using network interface {interface}: IP={ip}, Broadcast={broadcast}")
+                            return broadcast
+        except Exception as e:
+            print(f"Error getting broadcast address: {e}")
+    
+    # Try to get local IP and calculate broadcast
+    try:
+        # Create a socket to find our IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        print(f"Local IP: {local_ip}")
+        # For common /24 network, calculate broadcast
+        ip_parts = local_ip.split('.')
+        broadcast = f"{ip_parts[0]}.{ip_parts[1]}.{ip_parts[2]}.255"
+        print(f"Calculated broadcast address: {broadcast}")
+        return broadcast
+    except Exception as e:
+        print(f"Could not determine local IP: {e}")
+    
+    # Fallback to 255.255.255.255
+    print("Using fallback broadcast address: 255.255.255.255")
+    return '255.255.255.255'
+
+broadcast_addr = get_broadcast_address()
+
 comm_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 comm_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 comm_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -18,6 +68,9 @@ comm_socket.bind(('', BROADCAST_PORT))
 comm_socket.setblocking(False)
 
 running = True
+
+print(f"Driver Station started on port {BROADCAST_PORT}")
+print(f"Broadcasting to {broadcast_addr}:{BROADCAST_PORT}")
 
 game_status = "standby"
 
@@ -54,9 +107,13 @@ def encode_controller_data(controller):
     return struct.pack('6B2B', *axes, buttons & 0xFF, (buttons >> 8) & 0xFF)
 
 def discover_robots():
+    ping_count = 0
     while running:
         try:
-            comm_socket.sendto(b"ping", ('255.255.255.255', BROADCAST_PORT))
+            comm_socket.sendto(b"ping", (broadcast_addr, BROADCAST_PORT))
+            ping_count += 1
+            if ping_count % 20 == 0:  # Print every second (20 * 0.05s)
+                print(f"Sent {ping_count} pings, discovered {len(robots)} robot(s)")
         except Exception as e:
             if running:
                 print(f"Error sending ping: {e}")
@@ -66,12 +123,13 @@ def discover_robots():
             data, addr = comm_socket.recvfrom(1024)
             if data.startswith(b"pong:"):
                 name = data[5:].decode().strip()
+                print(f"Received pong from {name} at {addr}")
 
                 # Check if already known
                 existing = next((r for r in robots if r["name"] == name), None)
                 if not existing:
                     robots.append({"name": name, "controller": None, "addr": addr})
-                    print(f"Discovered new robot: {name} at {addr}")
+                    print(f"✓ Discovered new robot: {name} at {addr}")
 
                     robot1_dropdown['values'] = [r["name"] for r in robots]
                     robot2_dropdown['values'] = [r["name"] for r in robots]

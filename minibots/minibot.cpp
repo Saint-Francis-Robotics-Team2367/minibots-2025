@@ -56,6 +56,13 @@ void Minibot::updateController() {
   if (len <= 0) return;
   incomingPacket[len] = '\0';
 
+  Serial.print("Received packet (");
+  Serial.print(len);
+  Serial.print(" bytes) from ");
+  Serial.print(udp.remoteIP().toString());
+  Serial.print(":");
+  Serial.println(udp.remotePort());
+
   // Check if packet is binary controller data (8 bytes) or text command
   if (len == 8) {
     // This is binary controller data
@@ -81,15 +88,18 @@ void Minibot::updateController() {
 
   // Otherwise, treat as text command
   String packetStr = String(incomingPacket);
+  Serial.println("Text packet: " + packetStr);
 
   // --- respond to PC discovery ping ---
   if (packetStr == "ping") {
+    Serial.println("Received PING! Sending PONG response...");
     String reply = "pong:" + String(robotId);
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
     udp.write((const uint8_t*)reply.c_str(), reply.length());
     udp.endPacket();
+    Serial.println("Sent pong response: " + reply);
     if (!connected) {
-      Serial.println("Responded to discovery ping from " + udp.remoteIP().toString());
+      Serial.println("First connection from " + udp.remoteIP().toString());
       connected = true;
     }
     return;
@@ -100,6 +110,7 @@ void Minibot::updateController() {
     int sepIndex = packetStr.indexOf(':');
     if (sepIndex != -1) {
       gameStatus = stringToGameStatus(packetStr.substring(sepIndex + 1));
+      Serial.println("Game status updated to: " + packetStr.substring(sepIndex + 1));
       return;
     }
   }
