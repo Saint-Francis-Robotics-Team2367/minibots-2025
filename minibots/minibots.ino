@@ -13,7 +13,7 @@ const int freq = 50;
 const int resolution = 10;
 const char* ssid = "ROBOWIFINET";
 const char* password = "robo8711$$W";
-const char* robot_id = "SERV";
+const char* robot_id = "Crackens";
 
 // UDP setup
 WiFiUDP udp;
@@ -22,8 +22,8 @@ char incomingPacket[255];
 String gameStatus = "standby";
 
 // Motor pins
-#define leftMotorPin  18
-#define rightMotorPin 19
+#define leftMotorPin  16
+#define rightMotorPin 18
 
 void setup() {
   Serial.begin(115200);
@@ -48,12 +48,12 @@ void setup() {
 
 bool driveRightMotor(float value) {
   float clampedVal = std::clamp(value*20, -20.0f, 20.0f);
-  return ledcWrite(rightMotorPin, round(clampedVal + 75));
+  return ledcWrite(rightMotorPin, round(clampedVal + 90));
 }
 
 bool driveLeftMotor(float value) {
   float clampedVal = std::clamp(value*20, -20.0f, 20.0f);
-  return ledcWrite(leftMotorPin, round(clampedVal + 75));
+  return ledcWrite(leftMotorPin, round(clampedVal + 80));
 }
 
 void stopAllMotors() {
@@ -88,11 +88,6 @@ if (packetSize) {
       leftY = axes[1];
       rightX = axes[2];
       rightY = axes[3];
-
-      Serial.print("Left Y: ");
-      Serial.println(leftY);
-      Serial.print("Right Y: ");
-      Serial.println(rightY);
     }
   } else {
     // Treat as text packet
@@ -101,10 +96,10 @@ if (packetSize) {
       int sepIndex = packetStr.indexOf(':');
       if (sepIndex != -1) {
         gameStatus = packetStr.substring(sepIndex + 1);
-        Serial.println("Game status: " + gameStatus);
+        //Serial.println("Game status: " + gameStatus);
       }
     } else {
-      Serial.println("Unrecognized packet: " + packetStr);
+      //Serial.println("Unrecognized packet: " + packetStr);
     }
   }
 }
@@ -117,10 +112,6 @@ if (packetSize) {
   if (gameStatus != "standby") {
       left = (leftY < 130 && leftY > 125) ? 0.0 : -1*(leftY) / 128.0 + 1;
       right = (rightY < 130 && rightY > 125) ? 0.0 : -1*(rightY) / 128.0 + 1;
-      Serial.print("Left Speed: ");
-      Serial.println(left);
-      Serial.print("Right Speed: ");
-      Serial.println(right);
       driveLeftMotor(left);
       driveRightMotor(right);
   }

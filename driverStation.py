@@ -9,9 +9,21 @@ import struct
 # === Configuration ===
 BROADCAST_PORT = 2367
 robots = [
+    {"name": "Crackens", "controller": None},
+    {"name": "Metal Monkeys", "controller": None},
+    {"name": "Low Power Mode", "controller": None},
+    {"name": "Nut and Bolts", "controller": None},
+    {"name": "Ironclad", "controller": None},
+    {"name": "|noitalfni|", "controller": None},
+    {"name": "Da Botz", "controller": None},
+    {"name": "SuperWhy", "controller": None},
+    {"name": "Bot Warriors", "controller": None},
     {"name": "SERV", "controller": None},
-    {"name": "minibot_2", "controller": None}
+    {"name": "Trash Pickup", "controller": None},
+    {"name": "Manipulators", "controller": None}
 ]
+
+online_robots = [None, None]
 
 # === UDP Setup ===
 broadcast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -60,7 +72,8 @@ def encode_controller_data(controller, robot_name):
 def send_controller_data():
     while True:
         pygame.event.pump()
-        for robot in robots:
+        for robot in online_robots:
+            if robot == None: continue
             controller = robot["controller"]
             if controller:
                 data = encode_controller_data(controller, robot["name"])
@@ -69,16 +82,18 @@ def send_controller_data():
 
 def broadcast_game_status():
     while True:
-        for robot in robots:
+        for robot in online_robots:
+            if robot == None: continue
             packet = f"{robot['name']}:{game_status}".encode()
             broadcast_socket.sendto(packet, ("<broadcast>", BROADCAST_PORT))
         time.sleep(1)
 
-def connect_robot(robot_name, controller_name):
+def connect_robot(robot_name, controller_name, robot_index):
     robot = next((r for r in robots if r["name"] == robot_name), None)
     controller = next((c for c in active_controllers if c["name"] == controller_name), None)
     if robot and controller:
         robot["controller"] = controller["obj"]
+        online_robots[robot_index] = robot
         print(f"Connected {robot_name} to {controller_name}")
     else:
         print("Connection failed")
@@ -98,7 +113,7 @@ robot1_dropdown.pack()
 controller1_var = tk.StringVar()
 controller1_dropdown = ttk.Combobox(frame1, textvariable=controller1_var, values=[c["name"] for c in active_controllers], state="readonly")
 controller1_dropdown.pack()
-tk.Button(frame1, text="Connect", command=lambda: connect_robot(robot1_var.get(), controller1_var.get())).pack()
+tk.Button(frame1, text="Connect", command=lambda: connect_robot(robot1_var.get(), controller1_var.get(),0)).pack()
 
 # Robot 2
 frame2 = tk.LabelFrame(root, text="Robot 2", padx=10, pady=10)
@@ -109,7 +124,7 @@ robot2_dropdown.pack()
 controller2_var = tk.StringVar()
 controller2_dropdown = ttk.Combobox(frame2, textvariable=controller2_var, values=[c["name"] for c in active_controllers], state="readonly")
 controller2_dropdown.pack()
-tk.Button(frame2, text="Connect", command=lambda: connect_robot(robot2_var.get(), controller2_var.get())).pack()
+tk.Button(frame2, text="Connect", command=lambda: connect_robot(robot2_var.get(), controller2_var.get(),1)).pack()
 
 # === Threads ===
 Thread(target=send_controller_data, daemon=True).start()
@@ -118,3 +133,4 @@ Thread(target=broadcast_game_status, daemon=True).start()
 # === Run GUI ===
 root.mainloop()
 broadcast_socket.close()
+
